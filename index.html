@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>MapleDoko · Buscador de Drops</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Nunito:wght@400;700;800;900&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#2a1f3d;--bg2:#1d1530;--panel:#fff7e6;--panel-line:#b5793b;--panel-dark:#8a5828;
+    --ink:#3a2a18;--ink-soft:#6b5640;--leaf:#5bb75b;--leaf-dark:#3d8b3d;--gold:#ffcc4d;
+    --red:#e0473e;--blue:#4d8fd6;--shadow:rgba(0,0,0,.35);
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{font-family:'Nunito',sans-serif;color:var(--ink);
+    background:radial-gradient(circle at 20% 10%,rgba(91,183,91,.12),transparent 40%),
+      radial-gradient(circle at 80% 80%,rgba(255,204,77,.10),transparent 45%),
+      linear-gradient(var(--bg),var(--bg2));min-height:100vh}
+  .pix{font-family:'Press Start 2P',monospace}
+  .stars{position:fixed;inset:0;z-index:0;pointer-events:none;opacity:.5}
+  .star{position:absolute;width:2px;height:2px;background:#fff;border-radius:50%;animation:tw 3s ease-in-out infinite}
+  @keyframes tw{0%,100%{opacity:.2}50%{opacity:.9}}
+  .wrap{position:relative;z-index:2;max-width:780px;margin:0 auto;padding:30px 18px 80px}
+  header{text-align:center;margin-bottom:24px}
+  .logo{font-family:'Press Start 2P';font-size:clamp(20px,5vw,34px);color:var(--panel);
+    text-shadow:2px 2px 0 var(--leaf-dark),4px 4px 0 var(--shadow)}
+  .logo .d{color:var(--gold);text-shadow:2px 2px 0 var(--panel-dark),4px 4px 0 var(--shadow)}
+  .sub{margin-top:14px;font-size:13px;color:#d8c9a8;font-weight:700}
+  .sub .pix{display:block;font-size:11px;color:var(--gold);margin-bottom:8px}
+  .searchbox{position:relative;margin:26px 0 10px}
+  #q{width:100%;font-family:'Nunito';font-size:18px;font-weight:700;color:var(--ink);
+    background:var(--panel);border:4px solid var(--panel-line);border-radius:14px;
+    padding:18px 50px 18px 20px;box-shadow:0 5px 0 var(--panel-dark),0 10px 24px var(--shadow);outline:none}
+  #q::placeholder{color:#b8a888;font-weight:700}
+  #q:focus{border-color:var(--gold)}
+  .searchbox .mag{position:absolute;right:18px;top:50%;transform:translateY(-50%);font-size:22px;pointer-events:none}
+  .suggest{position:absolute;left:0;right:0;top:calc(100% + 6px);background:var(--panel);
+    border:3px solid var(--panel-line);border-radius:12px;box-shadow:0 8px 20px var(--shadow);
+    overflow:hidden;z-index:20;display:none}
+  .suggest.show{display:block}
+  .suggest-item{padding:12px 18px;font-weight:700;font-size:15px;cursor:pointer;
+    display:flex;align-items:center;gap:10px;border-bottom:1px solid #efe2c8}
+  .suggest-item:last-child{border-bottom:none}
+  .suggest-item:hover,.suggest-item.active{background:var(--gold)}
+  .suggest-item .tag{font-size:10px;font-family:'Press Start 2P';padding:3px 7px;border-radius:5px;color:#fff}
+  .tag-mob{background:var(--red)}.tag-item{background:var(--blue)}
+  .hint{text-align:center;color:#c9b896;font-size:14px;font-weight:600;margin-top:40px;line-height:1.8}
+  .hint .pix{display:block;font-size:11px;color:var(--gold);margin-bottom:14px}
+  .hint .ex{display:inline-block;background:rgba(255,255,255,.08);padding:6px 12px;border-radius:8px;
+    margin:4px;color:#e8dcc4;cursor:pointer;transition:background .15s}
+  .hint .ex:hover{background:rgba(255,204,77,.2)}
+  .result{background:var(--panel);border:4px solid var(--panel-line);border-radius:16px;margin-top:20px;
+    box-shadow:0 6px 0 var(--panel-dark),0 12px 30px var(--shadow);overflow:hidden;animation:pop .25s ease}
+  @keyframes pop{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+  .result-head{background:linear-gradient(var(--leaf),var(--leaf-dark));padding:18px 22px;color:#fff}
+  .result-head .type{font-family:'Press Start 2P';font-size:9px;opacity:.85;display:block;margin-bottom:8px}
+  .result-head h2{font-size:22px;font-weight:900;line-height:1.2}
+  .result-head.is-item{background:linear-gradient(var(--blue),#2f6cad)}
+  .result-body{padding:18px 22px}
+  .section-label{font-family:'Press Start 2P';font-size:10px;color:var(--ink-soft);
+    margin:6px 0 12px;display:flex;align-items:center;gap:8px}
+  .list{display:flex;flex-direction:column;gap:7px}
+  .row{display:flex;align-items:center;gap:10px;padding:11px 14px;background:#fffdf6;
+    border:2px solid #ecdcbe;border-radius:10px;cursor:pointer;transition:all .12s;font-weight:700;font-size:15px}
+  .row:hover{border-color:var(--gold);background:#fff;transform:translateX(3px)}
+  .row .arrow{margin-left:auto;color:var(--panel-line);font-weight:900;font-size:18px}
+  .locs{display:flex;flex-direction:column;gap:6px;margin-top:6px}
+  .loc{display:flex;align-items:center;gap:10px;padding:9px 14px;background:#f4ecdb;border-radius:8px;font-size:14px;font-weight:600}
+  .loc .cont{margin-left:auto;font-size:10px;font-family:'Press Start 2P';color:#fff;background:var(--ink-soft);padding:3px 8px;border-radius:5px}
+  .loc-more{text-align:center;font-size:12px;color:var(--ink-soft);font-weight:700;padding:6px;cursor:pointer}
+  .loc-more:hover{color:var(--red)}
+  .no-loc{font-size:13px;color:var(--ink-soft);font-style:italic;padding:8px 14px}
+  .count{font-size:12px;color:var(--ink-soft);font-weight:700;margin-left:auto}
+  .back{display:inline-flex;align-items:center;gap:8px;font-family:'Press Start 2P';font-size:10px;
+    color:#d8c9a8;cursor:pointer;margin-bottom:4px;padding:8px 0}
+  .back:hover{color:var(--gold)}
+  .back.hidden{display:none}
+  .error{text-align:center;color:var(--red);background:rgba(224,71,62,.12);border:2px solid var(--red);
+    border-radius:12px;padding:20px;font-weight:700;margin-top:20px}
+  footer{text-align:center;margin-top:40px;color:#8a7a98;font-size:11px;font-weight:700}
+  footer .pix{font-size:9px;color:var(--leaf)}
+  .stamp{font-size:10px;color:#6a5a78;margin-top:8px}
+</style>
+</head>
+<body>
+<div class="stars" id="stars"></div>
+<div class="wrap">
+  <header>
+    <div class="logo">MAPLE<span class="d">DOKO</span></div>
+    <div class="sub"><span class="pix">BUSCADOR DE DROPS</span>¿Qué dropea ese boss? ¿Quién suelta ese item?</div>
+  </header>
+  <div class="searchbox">
+    <input id="q" type="text" autocomplete="off" placeholder="Escribe un boss o un item... (ej. Papulatus)">
+    <span class="mag">🔍</span>
+    <div class="suggest" id="suggest"></div>
+  </div>
+  <div class="back hidden" id="back">‹ VOLVER</div>
+  <div id="content">
+    <div class="hint">
+      <span class="pix">EMPIEZA A ESCRIBIR</span>
+      Busca el nombre de un <b style="color:#ff9b94">monstruo</b> para ver qué dropea,<br>
+      o el de un <b style="color:#9cc4ee">item</b> para ver quién lo suelta.<br><br>
+      <span class="ex" data-ex="Papulatus">Papulatus</span>
+      <span class="ex" data-ex="Zakum">Zakum</span>
+      <span class="ex" data-ex="Onyx Apple">Onyx Apple</span>
+      <span class="ex" data-ex="Maple">Maple</span>
+    </div>
+  </div>
+  <footer>
+    <span class="pix">NOS VEMOS EN MAPLEDOKO, GORDO</span>
+    <div class="stamp" id="stamp"></div>
+  </footer>
+</div>
+<script>
+(function(){const s=document.getElementById('stars');
+  for(let i=0;i<60;i++){const d=document.createElement('div');d.className='star';
+    d.style.left=Math.random()*100+'%';d.style.top=Math.random()*100+'%';
+    d.style.animationDelay=(Math.random()*3)+'s';s.appendChild(d);}})();
+
+let DROPS=null,SPAWNS=null,mobByName={},itemIndex={},itemByName={},suggestList=[];
+const SAMPLE={drops:{mobs:[
+  {mobid:8800002,name:"Papulatus A",drops:[
+    {itemid:2022175,name:"Onyx Apple",chance:1287,min:1,max:1},
+    {itemid:1402000,name:"Maple Sword",chance:700,min:1,max:1},
+    {itemid:1002067,name:"Dark Tachion",chance:500,min:1,max:1}]},
+  {mobid:8800000,name:"Zakum A",drops:[
+    {itemid:2022175,name:"Onyx Apple",chance:2000,min:1,max:2},
+    {itemid:1442079,name:"Dragon Khanjar",chance:300,min:1,max:1}]},
+  {mobid:1110100,name:"Green Mushroom",drops:[
+    {itemid:1402000,name:"Maple Sword",chance:50,min:1,max:1}]}]},
+  spawns:{spawns:{
+    "1110100":[{map:"Pig Park",continent:"Victoria Island"},{map:"The Field South of Ellinia",continent:"Victoria Island"}],
+    "8800002":[{map:"Origin of Clocktower",continent:"Ossyria"}],
+    "8800000":[{map:"Dead Mine III",continent:"Victoria Island"}]}}};
+
+function buildIndexes(){
+  mobByName={};itemIndex={};itemByName={};suggestList=[];
+  DROPS.mobs.forEach(mob=>{
+    mobByName[mob.name.toLowerCase()]=mob;
+    suggestList.push({name:mob.name,type:'mob'});
+    mob.drops.forEach(d=>{
+      if(!itemIndex[d.itemid])itemIndex[d.itemid]={name:d.name,mobs:[]};
+      itemIndex[d.itemid].mobs.push(mob.name);});});
+  Object.entries(itemIndex).forEach(([iid,info])=>{
+    const key=info.name.toLowerCase();
+    if(!itemByName[key]){itemByName[key]={itemid:iid,name:info.name};
+      suggestList.push({name:info.name,type:'item'});}});
+}
+
+const q=document.getElementById('q'),suggest=document.getElementById('suggest'),
+  content=document.getElementById('content'),back=document.getElementById('back');
+let activeIdx=-1,history=[];
+function norm(s){return s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");}
+function esc(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+
+function doSuggest(){
+  const val=norm(q.value.trim());
+  if(val.length<2){suggest.classList.remove('show');return;}
+  const matches=suggestList.filter(s=>norm(s.name).includes(val)).sort((a,b)=>{
+    const an=norm(a.name),bn=norm(b.name);
+    const as=an.startsWith(val)?0:1,bs=bn.startsWith(val)?0:1;
+    if(as!==bs)return as-bs;return a.name.length-b.name.length;}).slice(0,8);
+  if(!matches.length){suggest.classList.remove('show');return;}
+  suggest.innerHTML=matches.map(m=>
+    `<div class="suggest-item" data-name="${esc(m.name)}" data-type="${m.type}">
+      <span class="tag ${m.type==='mob'?'tag-mob':'tag-item'}">${m.type==='mob'?'MOB':'ITEM'}</span>${esc(m.name)}</div>`).join('');
+  suggest.classList.add('show');activeIdx=-1;
+  suggest.querySelectorAll('.suggest-item').forEach(el=>{el.onclick=()=>selectResult(el.dataset.name,el.dataset.type);});
+}
+q.addEventListener('input',doSuggest);
+q.addEventListener('keydown',e=>{
+  const items=suggest.querySelectorAll('.suggest-item');
+  if(e.key==='ArrowDown'){e.preventDefault();activeIdx=Math.min(activeIdx+1,items.length-1);upd(items);}
+  else if(e.key==='ArrowUp'){e.preventDefault();activeIdx=Math.max(activeIdx-1,0);upd(items);}
+  else if(e.key==='Enter'){e.preventDefault();
+    if(activeIdx>=0&&items[activeIdx])items[activeIdx].click();else if(items[0])items[0].click();}});
+function upd(items){items.forEach((el,i)=>el.classList.toggle('active',i===activeIdx));}
+document.addEventListener('click',e=>{if(!suggest.contains(e.target)&&e.target!==q)suggest.classList.remove('show');});
+document.querySelectorAll('.ex').forEach(el=>{el.onclick=()=>{q.value=el.dataset.ex;doSuggest();};});
+
+function selectResult(name,type,fromHistory){
+  suggest.classList.remove('show');q.value=name;
+  if(!fromHistory)history.push({name,type});
+  back.classList.toggle('hidden',history.length<=1);
+  if(type==='mob')renderMob(name);else renderItem(name);
+}
+function renderMob(name){
+  const mob=mobByName[name.toLowerCase()];
+  if(!mob){content.innerHTML=`<div class="error">No encontré ese monstruo.</div>`;return;}
+  const locs=SPAWNS.spawns[mob.mobid]||[];let locHtml='';
+  if(locs.length){const shown=locs.slice(0,5);
+    locHtml=`<div class="section-label">📍 DÓNDE APARECE <span class="count">${locs.length} mapa(s)</span></div><div class="locs">`+
+      shown.map(l=>`<div class="loc">${esc(l.map)}<span class="cont">${esc(l.continent)}</span></div>`).join('')+
+      (locs.length>5?`<div class="loc-more" data-mob="${mob.mobid}">+ ver ${locs.length-5} más</div>`:'')+`</div>`;
+  }else locHtml=`<div class="section-label">📍 DÓNDE APARECE</div><div class="no-loc">Sin ubicación registrada (boss invocado o evento).</div>`;
+  const dropsHtml=mob.drops.map(d=>`<div class="row" data-name="${esc(d.name)}" data-type="item">${esc(d.name)}<span class="arrow">›</span></div>`).join('');
+  content.innerHTML=`<div class="result"><div class="result-head"><span class="type">MONSTRUO</span><h2>${esc(mob.name)}</h2></div>
+    <div class="result-body">${locHtml}
+    <div class="section-label" style="margin-top:18px">🎁 DROPS <span class="count">${mob.drops.length} item(s)</span></div>
+    <div class="list">${dropsHtml}</div></div></div>`;
+  bindRows();bindLocMore();
+}
+function renderItem(name){
+  const info=itemByName[name.toLowerCase()];
+  if(!info){content.innerHTML=`<div class="error">No encontré ese item.</div>`;return;}
+  const mobs=itemIndex[info.itemid].mobs;
+  const uniqueMobs=[...new Set(mobs)].sort((a,b)=>a.localeCompare(b));
+  const rowsHtml=uniqueMobs.map(mn=>`<div class="row" data-name="${esc(mn)}" data-type="mob">${esc(mn)}<span class="arrow">›</span></div>`).join('');
+  content.innerHTML=`<div class="result"><div class="result-head is-item"><span class="type">ITEM</span><h2>${esc(info.name)}</h2></div>
+    <div class="result-body"><div class="section-label">👹 LO DROPEA <span class="count">${uniqueMobs.length} monstruo(s)</span></div>
+    <div class="list">${rowsHtml}</div></div></div>`;
+  bindRows();
+}
+function bindRows(){content.querySelectorAll('.row').forEach(el=>{el.onclick=()=>selectResult(el.dataset.name,el.dataset.type);});}
+function bindLocMore(){const more=content.querySelector('.loc-more');if(!more)return;
+  more.onclick=()=>{const locs=SPAWNS.spawns[more.dataset.mob]||[];const cont=more.closest('.locs');
+    cont.innerHTML=locs.map(l=>`<div class="loc">${esc(l.map)}<span class="cont">${esc(l.continent)}</span></div>`).join('');};}
+back.onclick=()=>{history.pop();const prev=history[history.length-1];if(prev)selectResult(prev.name,prev.type,true);};
+
+async function init(){
+  try{
+    const [d,s]=await Promise.all([
+      fetch('drops.json').then(r=>r.ok?r.json():Promise.reject()),
+      fetch('spawns.json').then(r=>r.ok?r.json():Promise.reject())]);
+    DROPS=d;SPAWNS=s;
+    document.getElementById('stamp').textContent='Datos actualizados: '+(d.generated_utc||'');
+  }catch(e){
+    DROPS=SAMPLE.drops;SPAWNS=SAMPLE.spawns;
+    document.getElementById('stamp').textContent='(modo demo - sin conexión a datos)';
+  }
+  buildIndexes();
+}
+init();
+</script>
+</body>
+</html>
